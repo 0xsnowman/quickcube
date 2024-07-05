@@ -15,6 +15,27 @@ let cubes = [];
 let animationCubes = [];
 let clockWise = true;
 
+const colors = [
+    0xff0000, // Right face
+    0x00ff00, // Left face
+    0x0000ff, // Top face
+    0xffff00, // Bottom face
+    0x00ffff, // Front face
+    0xff00ff  // Back face
+];
+
+function randomColors() {
+    const colors = [];
+    for (let i = 0; i < 6; i++) {
+        const r = Math.floor(Math.random() * 256);
+        const g = Math.floor(Math.random() * 256);
+        const b = Math.floor(Math.random() * 256);
+        colors.push(`rgb(${r}, ${g}, ${b})`);
+    }
+    return colors;
+}
+
+
 function init() {
     const materials = [
         new THREE.MeshBasicMaterial({ color: 0xff3333 }), // Right face
@@ -38,18 +59,9 @@ function init() {
 
     // Function to create a cube
     function createCube(x, y, z) {
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        // Random color generation
-        const color = new THREE.Color(Math.random(), Math.random(), Math.random());
-        // colors.push(color);
-
-        // Create a mesh with dynamic material
-        const material = new THREE.MeshStandardMaterial({color: color});
-        const cube = new THREE.Mesh(geometry, material);
-
-        cube.position.set(x, y, z);
-        scene.add(cube);
-        cubes.push(cube);
+        const qcBox = new QCBox(x, y, z, 1, 1, 1, colors);
+        qcBox.addToScene(scene);
+        cubes.push(qcBox);
     }
 
     camera.position.set(9, 9, 9);
@@ -89,7 +101,7 @@ function init() {
 
 // Function to rotate the X cubes (front or back 9 cubes) clockwise
 function rotateXCubes(clockwiseDirection, frontOrBack) {
-
+    
     animationCubes = cubes
         .filter(cube => cube.position.z === (frontOrBack ? 0 : SPACING * (SIZE - 1)))
         .sort((cube1, cube2) => {
@@ -104,11 +116,12 @@ function rotateXCubes(clockwiseDirection, frontOrBack) {
             // If both cube.position.x and cube.position.z are equal, retain order
             return 0;
         });
-
+        
     const angle = (clockwiseDirection ? 1 : -1) * Math.PI / 2; // 90 degrees
 
     // Store original positions for animation
     const originalPositions = animationCubes.map(cube => cube.position.clone());
+    const originalRotations = animationCubes.map(cube => cube.rotation.clone());
 
     // Calculate new positions
     const newPositions = clockwiseDirection ? [
@@ -125,7 +138,7 @@ function rotateXCubes(clockwiseDirection, frontOrBack) {
 
     // Animate rotation
     let progress = 0;
-    const duration = 1000; // Duration of animation in milliseconds
+    const duration = 100; // Duration of animation in milliseconds
 
     function animateRotation() {
         if (progress < duration) {
@@ -138,7 +151,7 @@ function rotateXCubes(clockwiseDirection, frontOrBack) {
                 // Interpolate position
                 cube.position.lerpVectors(originalPositions[i], newPositions[i], t);
                 // Rotate around Z axis
-                cube.rotation.z = angle * t;
+                cube.setRotation(cube.rotation.x, cube.rotation.y, originalRotations[i].z + angle * t);
             });
 
             renderer.render(scene, camera);
@@ -146,7 +159,7 @@ function rotateXCubes(clockwiseDirection, frontOrBack) {
             // Ensure final position and rotation
             animationCubes.forEach((cube, i) => {
                 cube.position.copy(newPositions[i]);
-                cube.rotation.z = 0; // Reset rotation
+                cube.setRotation(cube.rotation.x, cube.rotation.y, originalRotations[i].z + angle); // Reset rotation
             });
 
             renderer.render(scene, camera);
@@ -178,6 +191,7 @@ function rotateYCubes(clockwiseDirection, leftOrRight) {
 
     // Store original positions for animation
     const originalPositions = animationCubes.map(cube => cube.position.clone());
+    const originalRotations = animationCubes.map(cube => cube.rotation.clone());
 
     // Calculate new positions
     const newPositions = clockwiseDirection ? [
@@ -194,7 +208,7 @@ function rotateYCubes(clockwiseDirection, leftOrRight) {
 
     // Animate rotation
     let progress = 0;
-    const duration = 1000; // Duration of animation in milliseconds
+    const duration = 100; // Duration of animation in milliseconds
 
     function animateRotation() {
         if (progress < duration) {
@@ -207,15 +221,15 @@ function rotateYCubes(clockwiseDirection, leftOrRight) {
                 // Interpolate position
                 cube.position.lerpVectors(originalPositions[i], newPositions[i], t);
                 // Rotate around X axis
-                cube.rotation.x = angle * t;
+                cube.setRotation(originalRotations[i].x + angle * t, cube.rotation.y, cube.rotation.z);
             });
 
             renderer.render(scene, camera);
         } else {
             // Ensure final position and rotation
             animationCubes.forEach((cube, i) => {
-                cube.position.copy(newPositions[i]);
-                cube.rotation.x = 0; // Reset rotation
+                cube.setPosition(newPositions[i].x, newPositions[i].y, newPositions[i].z);
+                cube.setRotation(originalRotations[i].x + angle, cube.rotation.y, cube.rotation.z); // Reset rotation
             });
 
             renderer.render(scene, camera);
@@ -247,6 +261,7 @@ function rotateZCubes(clockwiseDirection, upOrDown) {
 
     // Store original positions for animation
     const originalPositions = animationCubes.map(cube => cube.position.clone());
+    const originalRotations = animationCubes.map(cube => cube.rotation.clone());
 
     // Calculate new positions
     const newPositions = clockwiseDirection ? [
@@ -263,7 +278,7 @@ function rotateZCubes(clockwiseDirection, upOrDown) {
 
     // Animate rotation
     let progress = 0;
-    const duration = 1000; // Duration of animation in milliseconds
+    const duration = 100; // Duration of animation in milliseconds
 
     function animateRotation() {
         if (progress < duration) {
@@ -276,15 +291,16 @@ function rotateZCubes(clockwiseDirection, upOrDown) {
                 // Interpolate position
                 cube.position.lerpVectors(originalPositions[i], newPositions[i], t);
                 // Rotate around Y axis
-                cube.rotation.y = angle * t;
+                cube.setRotation(cube.rotation.x, originalRotations[i].y + angle * t, cube.rotation.z);
             });
 
             renderer.render(scene, camera);
         } else {
             // Ensure final position and rotation
             animationCubes.forEach((cube, i) => {
-                cube.position.copy(newPositions[i]);
-                cube.rotation.y = 0; // Reset rotation
+                // cube.position.copy(newPositions[i]);
+                cube.setPosition(newPositions[i].x, newPositions[i].y, newPositions[i].z);
+                cube.setRotation(cube.rotation.x, originalRotations[i].y + angle, cube.rotation.z); // Reset rotation
             });
 
             renderer.render(scene, camera);
