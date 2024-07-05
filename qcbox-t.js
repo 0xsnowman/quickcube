@@ -34,9 +34,10 @@ class QCBox {
         this.sizeX = sizeX;
         this.sizeY = sizeY;
         this.sizeZ = sizeZ;
-        this.rotation = new THREE.Euler(0, 0, 0); // Initial rotation
-        // this.quaternion = new THREE.Quaternion(); // Add quaternion property
-
+        
+        // Initialize quaternion for rotation
+        this.quaternion = new THREE.Quaternion();
+        
         this.logicX = logicX;
         this.logicY = logicY;
         this.logicZ = logicZ;
@@ -106,24 +107,14 @@ class QCBox {
         this.updateMeshes();
     }
 
-    rotateX(rx) {
-        this.rotation.set(this.rotation.clone().x + rx, this.rotation.clone().y, this.rotation.clone().z);
+    // Rotate using quaternion
+    rotateByQuaternion(quaternion) {
+        this.quaternion.multiply(quaternion).normalize();
         this.updateMeshes();
     }
 
-    rotateY(ry) {
-        this.rotation.set(this.rotation.clone().x, this.rotation.clone().y + ry, this.rotation.clone().z);
-        this.updateMeshes();
-    }
-
-    rotateZ(rz) {
-        this.rotation.set(this.rotation.clone().x, this.rotation.clone().y, this.rotation.clone().z + rz);
-        this.updateMeshes();
-    }
-
-    // This is manual method to set rotation of cube
-    setRotation(x, y, z) {
-        this.rotation.set(x, y, z);
+    applyQuaternion(quaternion) {
+        this.quaternion.multiply(quaternion).normalize();
         this.updateMeshes();
     }
 
@@ -134,7 +125,7 @@ class QCBox {
     updateMeshes() {
         // Update the position and rotation of the group
         this.group.position.copy(this.position);
-        this.group.rotation.copy(this.rotation);
+        this.group.quaternion.copy(this.quaternion);
 
         // Adjust each mesh's position and rotation based on the face index
         this.meshes.forEach((mesh, index) => {

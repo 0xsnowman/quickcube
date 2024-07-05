@@ -104,7 +104,6 @@ function init() {
 
 // Function to rotate the FB cubes (front or back 9 cubes) clockwise
 function rotateFBCubes(clockwiseDirection, frontOrBack) {
-
     animationCubes = cubes
         .filter(cube => cube.position.z === (frontOrBack ? 0 : SPACING * (SIZE - 1)))
         .sort((cube1, cube2) => {
@@ -112,11 +111,11 @@ function rotateFBCubes(clockwiseDirection, frontOrBack) {
             if (cube1.position.x > cube2.position.x) return -1;
             if (cube1.position.x < cube2.position.x) return 1;
 
-            // If cube.position.x are equal, sort by cube.position.z descending
+            // If cube.position.x are equal, sort by cube.position.y descending
             if (cube1.position.y > cube2.position.y) return -1;
             if (cube1.position.y < cube2.position.y) return 1;
 
-            // If both cube.position.x and cube.position.z are equal, retain order
+            // If both cube.position.x and cube.position.y are equal, retain order
             return 0;
         });
 
@@ -124,7 +123,13 @@ function rotateFBCubes(clockwiseDirection, frontOrBack) {
 
     // Store original positions for animation
     const originalPositions = animationCubes.map(cube => cube.position.clone());
-    const originalRotations = animationCubes.map(cube => cube.rotation.clone());
+    const originalQuaternions = animationCubes.map(cube => cube.group.quaternion.clone());
+
+    // Calculate rotation axis
+    const axis = new THREE.Vector3(0, 0, 1); // Z-axis
+
+    // Create a quaternion for rotating around the axis
+    const deltaQuaternion = new THREE.Quaternion().setFromAxisAngle(axis, angle);
 
     // Calculate new positions
     const newPositions = clockwiseDirection ? [
@@ -137,14 +142,8 @@ function rotateFBCubes(clockwiseDirection, frontOrBack) {
         originalPositions[0], originalPositions[3], originalPositions[6]
     ];
 
-    clockWise = true;
-
-    // Animate rotation
     let progress = 0;
     const duration = 2000; // Duration of animation in milliseconds
-
-    const quaternion = new THREE.Quaternion();
-    const axis = new THREE.Vector3(0, 0, 1); // Rotation axis (z-axis in this case)    
 
     function animateRotation() {
         if (progress < duration) {
@@ -152,16 +151,11 @@ function rotateFBCubes(clockwiseDirection, frontOrBack) {
             progress += 16; // Assuming 60fps, ~16ms per frame
             const t = progress / duration;
 
-            // Rotate and interpolate positions
+            // Interpolate positions
             animationCubes.forEach((cube, i) => {
-                // Interpolate position
                 cube.position.lerpVectors(originalPositions[i], newPositions[i], t);
-                // Rotate around Z axis
-                cube.rotateZ(angle * (16 / duration));
-
-                // quaternion.setFromAxisAngle(axis, angle * (16 / duration));
-                // const euler = new THREE.Euler().setFromQuaternion(quaternion, 'XYZ');
-                // cube.rotation.copy(euler);
+                // const originalQuaternion = originalQuaternions[cubes.indexOf(cube)];
+                // cube.quaternion.slerp(new THREE.Quaternion().copy([i]).multiply(deltaQuaternion), t);
                 cube.updateMeshes();
             });
 
@@ -170,8 +164,8 @@ function rotateFBCubes(clockwiseDirection, frontOrBack) {
             // Ensure final position and rotation
             animationCubes.forEach((cube, i) => {
                 cube.position.copy(newPositions[i]);
-                // cube.setRotation(originalRotations[i].x, originalRotations[i].y, originalRotations[i].z + angle);
-                // console.log('fb', i, cube.position.x, cube.position.y, cube.position.z, cube.rotation.x, cube.rotation.y, cube.rotation.z);
+                cube.applyQuaternion(deltaQuaternion.clone());
+                // cube.group.quaternion.copy(originalQuaternions[i].multiply(deltaQuaternion));
             });
 
             renderer.render(scene, camera);
@@ -203,7 +197,13 @@ function rotateLRCubes(clockwiseDirection, leftOrRight) {
 
     // Store original positions for animation
     const originalPositions = animationCubes.map(cube => cube.position.clone());
-    const originalRotations = animationCubes.map(cube => cube.rotation.clone());
+    const originalQuaternions = animationCubes.map(cube => cube.group.quaternion.clone());
+
+    // Calculate rotation axis
+    const axis = new THREE.Vector3(1, 0, 0); // X-axis
+
+    // Create a quaternion for rotating around the axis
+    const deltaQuaternion = new THREE.Quaternion().setFromAxisAngle(axis, angle);
 
     // Calculate new positions
     const newPositions = clockwiseDirection ? [
@@ -216,9 +216,6 @@ function rotateLRCubes(clockwiseDirection, leftOrRight) {
         originalPositions[0], originalPositions[3], originalPositions[6]
     ];
 
-    clockWise = true;
-
-    // Animate rotation
     let progress = 0;
     const duration = 2000; // Duration of animation in milliseconds
 
@@ -228,13 +225,12 @@ function rotateLRCubes(clockwiseDirection, leftOrRight) {
             progress += 16; // Assuming 60fps, ~16ms per frame
             const t = progress / duration;
 
-            // Rotate and interpolate positions
+            // Interpolate positions
             animationCubes.forEach((cube, i) => {
-                // Interpolate position
                 cube.position.lerpVectors(originalPositions[i], newPositions[i], t);
-                // Rotate around X axis
-                // cube.setRotation(originalRotations[i].x + angle * t, originalRotations[i].y, originalRotations[i].z);
-                cube.rotateX(angle * (16 / duration));
+                // const originalQuaternion = originalQuaternions[cubes.indexOf(cube)];
+                // cube.quaternion.slerp(new THREE.Quaternion().copy(originalQuaternions[i]).multiply(deltaQuaternion), t);
+                cube.updateMeshes();
             });
 
             renderer.render(scene, camera);
@@ -242,8 +238,8 @@ function rotateLRCubes(clockwiseDirection, leftOrRight) {
             // Ensure final position and rotation
             animationCubes.forEach((cube, i) => {
                 cube.position.copy(newPositions[i]);
-                // cube.setRotation(originalRotations[i].x + angle, originalRotations[i].y, originalRotations[i].z); // Reset rotation
-                // console.log('lr', i, cube.position.x, cube.position.y, cube.position.z, cube.rotation.x, cube.rotation.y, cube.rotation.z);
+                cube.applyQuaternion(deltaQuaternion.clone());
+                // cube.group.quaternion.copy(originalQuaternions[i].multiply(deltaQuaternion));
             });
 
             renderer.render(scene, camera);
@@ -275,7 +271,13 @@ function rotateUDCubes(clockwiseDirection, upOrDown) {
 
     // Store original positions for animation
     const originalPositions = animationCubes.map(cube => cube.position.clone());
-    const originalRotations = animationCubes.map(cube => cube.rotation.clone());
+    const originalQuaternions = animationCubes.map(cube => cube.group.quaternion.clone());
+
+    // Calculate rotation axis
+    const axis = new THREE.Vector3(0, 1, 0); // Y-axis
+
+    // Create a quaternion for rotating around the axis
+    const deltaQuaternion = new THREE.Quaternion().setFromAxisAngle(axis, angle);
 
     // Calculate new positions
     const newPositions = clockwiseDirection ? [
@@ -288,9 +290,6 @@ function rotateUDCubes(clockwiseDirection, upOrDown) {
         originalPositions[0], originalPositions[3], originalPositions[6]
     ];
 
-    clockWise = true;
-
-    // Animate rotation
     let progress = 0;
     const duration = 2000; // Duration of animation in milliseconds
 
@@ -300,16 +299,12 @@ function rotateUDCubes(clockwiseDirection, upOrDown) {
             progress += 16; // Assuming 60fps, ~16ms per frame
             const t = progress / duration;
 
-            // animationCubes.forEach((cube, i) => {
-            //     console.log('ud', i, '-', originalRotations[i].x, originalRotations[i].y, originalRotations[i].z);
-            // });
-
-            // Rotate and interpolate positions
+            // Interpolate positions
             animationCubes.forEach((cube, i) => {
-                // Interpolate position
                 cube.position.lerpVectors(originalPositions[i], newPositions[i], t);
-                // Rotate around Y axis
-                cube.setRotation(0, originalRotations[i].y + angle * t, 0);
+                // const originalQuaternion = originalQuaternions[cubes.indexOf(cube)];
+                // cube.quaternion.slerp(new THREE.Quaternion().copy(originalQuaternions[i]).multiply(deltaQuaternion), t);
+                cube.updateMeshes();
             });
 
             renderer.render(scene, camera);
@@ -317,7 +312,8 @@ function rotateUDCubes(clockwiseDirection, upOrDown) {
             // Ensure final position and rotation
             animationCubes.forEach((cube, i) => {
                 cube.position.copy(newPositions[i]);
-                cube.setRotation(0, originalRotations[i].y + angle, 0); // Reset rotation
+                cube.applyQuaternion(deltaQuaternion.clone());
+                // cube.group.quaternion.copy(originalQuaternions[i].multiply(deltaQuaternion));
             });
 
             renderer.render(scene, camera);
