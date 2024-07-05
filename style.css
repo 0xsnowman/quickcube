@@ -1,6 +1,14 @@
 body {
   font-family: Arial, sans-serif;
   text-align: center;
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 400px;
+  min-height: 450px;
 }
 
 h1 {
@@ -23,4 +31,11 @@ h1 {
 #cube-container {
   width: 400px;
   height: 400px;
+}
+
+#timer {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  font-size: 12px;
 }

@@ -28,6 +28,14 @@
         "48": "icon48.png",
         "128": "icon128.png"
       }
+    },
+    "commands": {
+      "open-quickcube": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+Y"
+        },
+        "description": "Open Quick Cube"
+      }
     }
   }
   
