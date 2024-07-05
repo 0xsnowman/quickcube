@@ -10,7 +10,7 @@ const DOWN = false;
 
 let scene, camera, renderer;
 let cubes = [];
-
+let experimentCubes = [];
 let randomizerString = [];
 
 // Array to hold the cubes to be animated(rotated)
@@ -52,7 +52,9 @@ function init() {
     scene.add(ambientLight);
 
     /* -- experiment -- */
-
+    const vec1 = new THREE.Vector3(0, 1, 0);
+    const euler1 = new THREE.Euler(0, -Math.PI / 2, 0);
+    console.log(vec1.applyEuler(euler1));
     /* -- experiment -- */
 
     // Function to create a cube
@@ -100,6 +102,56 @@ function init() {
     // Shuffler
 }
 
+function testCubes() {
+    experimentCubes = cubes
+        .filter(cube => cube.position.x === 3 && cube.position.y === 3 && cube.position.z === 3);
+
+    if (experimentCubes.length === 0) {
+        // alert("Empty!");
+    } else {
+        // alert("Filled!");
+    }
+}
+
+function rotateTestCube(rotationDirection) {
+    experimentCubes.forEach((cube, i) => {
+        if (rotationDirection === 'x') {
+            cube.rotateX(Math.PI / 2);
+            cube.applyEuler(new THREE.Euler(Math.PI / 2, 0, 0));
+        }
+        else if (rotationDirection === 'y') {
+            cube.rotateY(Math.PI / 2);
+            cube.applyEuler(new THREE.Euler(0, Math.PI / 2, 0));
+        }
+        else {
+            cube.rotateZ(Math.PI / 2);
+            cube.applyEuler(new THREE.Euler(0, 0, Math.PI / 2));
+        }
+
+        console.log(cube.xDirection.x, cube.xDirection.y, cube.xDirection.z);
+        console.log(cube.yDirection.x, cube.yDirection.y, cube.yDirection.z);
+        console.log(cube.zDirection.x, cube.zDirection.y, cube.zDirection.z);
+    });
+}
+
+function showEulers() {
+    cubes.forEach((cube, i) => {
+        if (cube.logicX === 2 && cube.logicY === 0 && cube.logicZ === 2) {
+            console.log(cube.xDirection.x, cube.xDirection.y, cube.xDirection.z);
+            console.log(cube.yDirection.x, cube.yDirection.y, cube.yDirection.z);
+            console.log(cube.zDirection.x, cube.zDirection.y, cube.zDirection.z);
+        }
+    });
+}
+
+function testRemoveGroupFromQcbox() {
+    cubes.forEach((cube, i) => {
+        if (cube.logicX === 2 && cube.logicY === 2 && cube.logicZ === 2) {
+            cube.removeToScene(scene);
+        }
+    });
+}
+
 // rotateFBCubes : z, rotateLRCubes: x, rotateUDCubes: y
 
 // Function to rotate the FB cubes (front or back 9 cubes) clockwise
@@ -141,28 +193,41 @@ function rotateFBCubes(clockwiseDirection, frontOrBack) {
 
     // Animate rotation
     let progress = 0;
-    const duration = 2000; // Duration of animation in milliseconds
-
-    const quaternion = new THREE.Quaternion();
-    const axis = new THREE.Vector3(0, 0, 1); // Rotation axis (z-axis in this case)    
+    const duration = 3200; // Duration of animation in milliseconds
 
     function animateRotation() {
         if (progress < duration) {
             requestAnimationFrame(animateRotation);
             progress += 16; // Assuming 60fps, ~16ms per frame
             const t = progress / duration;
+            const rotationAmount = angle * 16 / duration;
 
             // Rotate and interpolate positions
             animationCubes.forEach((cube, i) => {
+                // if (progress < 32) {
+                //     console.log(cube.xDirection.x, cube.xDirection.y, cube.xDirection.z);
+                //     console.log(cube.yDirection.x, cube.yDirection.y, cube.yDirection.z);
+                //     console.log(cube.zDirection.x, cube.zDirection.y, cube.zDirection.z);    
+                // }
+                // Rotate around Z axis
+                if (cube.isParallel(new THREE.Vector3(0, 0, 1), cube.xDirection)) {
+                    cube.rotateX(rotationAmount * cube.dotProductDirection(new THREE.Vector3(0, 0, 1), cube.xDirection));
+                    if (cube.logicX === 2 && cube.logicY === 0 && cube.logicZ === 2) {
+                        console.log('x-parellel to z-axis is right', cube.xDirection.x, cube.xDirection.y, cube.xDirection.z);
+                    }
+                } else if (cube.isParallel(new THREE.Vector3(0, 0, 1), cube.yDirection)) {
+                    if (cube.logicX === 2 && cube.logicY === 0 && cube.logicZ === 2) {
+                        console.log('y-parellel is z-axis is right', cube.yDirection.x, cube.yDirection.y, cube.yDirection.z);
+                    }
+                    cube.rotateY(rotationAmount * cube.dotProductDirection(new THREE.Vector3(0, 0, 1), cube.yDirection));
+                } else if (cube.isParallel(new THREE.Vector3(0, 0, 1), cube.zDirection)) {
+                    cube.rotateZ(rotationAmount * cube.dotProductDirection(new THREE.Vector3(0, 0, 1), cube.zDirection));
+                } else {
+                    console.log('[require fix]');
+                }
+
                 // Interpolate position
                 cube.position.lerpVectors(originalPositions[i], newPositions[i], t);
-                // Rotate around Z axis
-                cube.rotateZ(angle * (16 / duration));
-
-                // quaternion.setFromAxisAngle(axis, angle * (16 / duration));
-                // const euler = new THREE.Euler().setFromQuaternion(quaternion, 'XYZ');
-                // cube.rotation.copy(euler);
-                cube.updateMeshes();
             });
 
             renderer.render(scene, camera);
@@ -170,8 +235,31 @@ function rotateFBCubes(clockwiseDirection, frontOrBack) {
             // Ensure final position and rotation
             animationCubes.forEach((cube, i) => {
                 cube.position.copy(newPositions[i]);
-                // cube.setRotation(originalRotations[i].x, originalRotations[i].y, originalRotations[i].z + angle);
-                // console.log('fb', i, cube.position.x, cube.position.y, cube.position.z, cube.rotation.x, cube.rotation.y, cube.rotation.z);
+
+                let euler = new THREE.Euler(0, 0, angle); // Get the Euler rotation
+
+                if (cube.currentRotationProgress === 'x') {
+                    euler = new THREE.Euler(0, 0, angle * cube.dotProductDirection(new THREE.Vector3(0, 0, 1), cube.xDirection));
+                } else if (cube.currentRotationProgress === 'y') {
+                    euler = new THREE.Euler(0, 0, angle * cube.dotProductDirection(new THREE.Vector3(0, 0, 1), cube.yDirection));
+                } else if (cube.currentRotationProgress === 'z') {
+                    euler = new THREE.Euler(0, 0, angle * cube.dotProductDirection(new THREE.Vector3(0, 0, 1), cube.zDirection));
+                } else {
+                    console.log('[require fix]');
+                }
+
+                if (cube.logicX === 2 && cube.logicY === 0 && cube.logicZ === 2) {
+                    console.log('euler', euler);
+                }
+
+                cube.applyEuler(euler);
+
+                // console.log("FB console");
+                // console.log(i, " ---------------------", cube.position.x, cube.position.y, cube.position.z);
+                // console.log('x-(', cube.xDirection.x, cube.xDirection.y, cube.xDirection.z, ')');
+                // console.log('y-(', cube.yDirection.x, cube.yDirection.y, cube.yDirection.z, ')');
+                // console.log('z-(', cube.zDirection.x, cube.zDirection.y, cube.zDirection.z, ')');
+                // console.log(" ---------------------\n");
             });
 
             renderer.render(scene, camera);
@@ -220,21 +308,42 @@ function rotateLRCubes(clockwiseDirection, leftOrRight) {
 
     // Animate rotation
     let progress = 0;
-    const duration = 2000; // Duration of animation in milliseconds
+    const duration = 3200; // Duration of animation in milliseconds
 
     function animateRotation() {
         if (progress < duration) {
             requestAnimationFrame(animateRotation);
             progress += 16; // Assuming 60fps, ~16ms per frame
             const t = progress / duration;
+            const rotationAmount = angle * 16 / duration;
 
             // Rotate and interpolate positions
             animationCubes.forEach((cube, i) => {
+                // if (progress < 32) {
+                //     console.log(cube.xDirection.x, cube.xDirection.y, cube.xDirection.z);
+                //     console.log(cube.yDirection.x, cube.yDirection.y, cube.yDirection.z);
+                //     console.log(cube.zDirection.x, cube.zDirection.y, cube.zDirection.z);    
+                // }
+                
+                // Rotate around X axis
+                if (cube.isParallel(new THREE.Vector3(1, 0, 0), cube.xDirection)) {
+                    cube.rotateX(rotationAmount * cube.dotProductDirection(new THREE.Vector3(1, 0, 0), cube.xDirection), t);
+                    // if (cube.logicX === 2 && cube.logicY === 0 && cube.logicZ === 2) {
+                    //     console.log('x-parellel to x-axis is right', cube.yDirection.x, cube.yDirection.y, cube.yDirection.z);
+                    // }
+                } else if (cube.isParallel(new THREE.Vector3(1, 0, 0), cube.yDirection)) {
+                    cube.rotateY(rotationAmount * cube.dotProductDirection(new THREE.Vector3(1, 0, 0), cube.yDirection), t);
+                    if (cube.logicX === 2 && cube.logicY === 0 && cube.logicZ === 2) {
+                        console.log('y-parellel to x-axis is right', cube.yDirection.x, cube.yDirection.y, cube.yDirection.z);
+                    }
+                } else if (cube.isParallel(new THREE.Vector3(1, 0, 0), cube.zDirection)) {
+                    cube.rotateZ(rotationAmount * cube.dotProductDirection(new THREE.Vector3(1, 0, 0), cube.zDirection), t);
+                } else {
+                    console.log('[require fix]');
+                }
+
                 // Interpolate position
                 cube.position.lerpVectors(originalPositions[i], newPositions[i], t);
-                // Rotate around X axis
-                // cube.setRotation(originalRotations[i].x + angle * t, originalRotations[i].y, originalRotations[i].z);
-                cube.rotateX(angle * (16 / duration));
             });
 
             renderer.render(scene, camera);
@@ -242,8 +351,31 @@ function rotateLRCubes(clockwiseDirection, leftOrRight) {
             // Ensure final position and rotation
             animationCubes.forEach((cube, i) => {
                 cube.position.copy(newPositions[i]);
-                // cube.setRotation(originalRotations[i].x + angle, originalRotations[i].y, originalRotations[i].z); // Reset rotation
-                // console.log('lr', i, cube.position.x, cube.position.y, cube.position.z, cube.rotation.x, cube.rotation.y, cube.rotation.z);
+
+                let euler = new THREE.Euler(angle, 0, 0); // Get the Euler rotation
+
+                if (cube.currentRotationProgress === 'x') {
+                    euler = new THREE.Euler(angle * cube.dotProductDirection(new THREE.Vector3(1, 0, 0), cube.xDirection), 0, 0);
+                } else if (cube.currentRotationProgress === 'y') {
+                    euler = new THREE.Euler(angle * cube.dotProductDirection(new THREE.Vector3(1, 0, 0), cube.yDirection), 0, 0);
+                } else if (cube.currentRotationProgress === 'z') {
+                    euler = new THREE.Euler(angle * cube.dotProductDirection(new THREE.Vector3(1, 0, 0), cube.zDirection), 0, 0);
+                } else {
+                    console.log('[require fix]');
+                }
+
+                if (cube.logicX === 2 && cube.logicY === 0 && cube.logicZ === 2) {
+                    console.log('euler', euler);
+                }
+
+                cube.applyEuler(euler);
+
+                // console.log("LR console");
+                // console.log(i, " ---------------------", cube.position.x, cube.position.y, cube.position.z);
+                // console.log('x-(', cube.xDirection.x, cube.xDirection.y, cube.xDirection.z, ')');
+                // console.log('y-(', cube.yDirection.x, cube.yDirection.y, cube.yDirection.z, ')');
+                // console.log('z-(', cube.zDirection.x, cube.zDirection.y, cube.zDirection.z, ')');
+                // console.log(" ---------------------\n");
             });
 
             renderer.render(scene, camera);
@@ -292,7 +424,8 @@ function rotateUDCubes(clockwiseDirection, upOrDown) {
 
     // Animate rotation
     let progress = 0;
-    const duration = 2000; // Duration of animation in milliseconds
+    const duration = 3200; // Duration of animation in milliseconds
+    const rotationAmount = angle * 16 / duration;
 
     function animateRotation() {
         if (progress < duration) {
@@ -300,16 +433,26 @@ function rotateUDCubes(clockwiseDirection, upOrDown) {
             progress += 16; // Assuming 60fps, ~16ms per frame
             const t = progress / duration;
 
-            // animationCubes.forEach((cube, i) => {
-            //     console.log('ud', i, '-', originalRotations[i].x, originalRotations[i].y, originalRotations[i].z);
-            // });
-
             // Rotate and interpolate positions
             animationCubes.forEach((cube, i) => {
+                // if (progress < 32) {
+                //     console.log(cube.xDirection.x, cube.xDirection.y, cube.xDirection.z);
+                //     console.log(cube.yDirection.x, cube.yDirection.y, cube.yDirection.z);
+                //     console.log(cube.zDirection.x, cube.zDirection.y, cube.zDirection.z);    
+                // }
+                // Rotate around Y axis
+                if (cube.isParallel(new THREE.Vector3(0, 1, 0), cube.xDirection)) {
+                    cube.rotateX(rotationAmount * cube.dotProductDirection(new THREE.Vector3(0, 1, 0), cube.xDirection));
+                } else if (cube.isParallel(new THREE.Vector3(0, 1, 0), cube.yDirection)) {
+                    cube.rotateY(rotationAmount * cube.dotProductDirection(new THREE.Vector3(0, 1, 0), cube.yDirection));
+                } else if (cube.isParallel(new THREE.Vector3(0, 1, 0), cube.zDirection)) {
+                    cube.rotateZ(rotationAmount * cube.dotProductDirection(new THREE.Vector3(0, 1, 0), cube.zDirection));
+                } else {
+                    console.log('[require fix]');
+                }
+
                 // Interpolate position
                 cube.position.lerpVectors(originalPositions[i], newPositions[i], t);
-                // Rotate around Y axis
-                cube.setRotation(0, originalRotations[i].y + angle * t, 0);
             });
 
             renderer.render(scene, camera);
@@ -317,7 +460,24 @@ function rotateUDCubes(clockwiseDirection, upOrDown) {
             // Ensure final position and rotation
             animationCubes.forEach((cube, i) => {
                 cube.position.copy(newPositions[i]);
-                cube.setRotation(0, originalRotations[i].y + angle, 0); // Reset rotation
+
+                let euler = new THREE.Euler(angle, 0, 0); // Get the Euler rotation
+
+                if (cube.currentRotationProgress === 'x') {
+                    euler = new THREE.Euler(0, angle * cube.dotProductDirection(new THREE.Vector3(0, 1, 0), cube.xDirection), 0);
+                } else if (cube.currentRotationProgress === 'y') {
+                    euler = new THREE.Euler(0, angle * cube.dotProductDirection(new THREE.Vector3(0, 1, 0), cube.yDirection), 0);
+                } else if (cube.currentRotationProgress === 'z') {
+                    euler = new THREE.Euler(0, angle * cube.dotProductDirection(new THREE.Vector3(0, 1, 0), cube.zDirection), 0);
+                } else {
+                    console.log('[require fix]');
+                }
+
+                if (cube.logicX === 2 && cube.logicY === 0 && cube.logicZ === 2) {
+                    console.log('euler', euler);
+                }
+
+                cube.applyEuler(euler);
             });
 
             renderer.render(scene, camera);
@@ -386,6 +546,27 @@ document.addEventListener('keyup', function (event) {
         case 'D':
         case 'd':
             rotateUDCubes(clockWise, DOWN);
+            break;
+        case 'T':
+        case 't':
+            testCubes();
+            break;
+        case 'X':
+        case 'x':
+            rotateTestCube('x');
+            break;
+        case 'Y':
+        case 'y':
+            rotateTestCube('y');
+            break;
+        case 'Z':
+        case 'z':
+            rotateTestCube('z');
+            break;
+        case 'Q':
+        case 'q':
+            // showEulers();
+            testRemoveGroupFromQcbox();
             break;
         case ' ':
             clockWise = false;
