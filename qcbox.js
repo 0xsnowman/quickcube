@@ -79,109 +79,18 @@ class QCBox {
         this.updateMeshes();
     }
 
-    applyEuler(euler) {
-        this.xDirection.applyEuler(euler);
-        this.yDirection.applyEuler(euler);
-        this.zDirection.applyEuler(euler);
-        this.roundUpDirection();
-
-        if (this.logicX === 2 && this.logicY === 0 && this.logicZ === 2) {
-            console.log(this.xDirection.x, this.xDirection.y, this.xDirection.z);
-            console.log(this.yDirection.x, this.yDirection.y, this.yDirection.z);
-            console.log(this.zDirection.x, this.zDirection.y, this.zDirection.z);
-        }
+    getGroup() {
+        return this.group;
     }
 
-    normalizeDirection(direction) {
-        const roundedDirection = Math.round(direction * 100) / 100;
-        return Math.abs(roundedDirection) === 0 ? 0 : roundedDirection;
-    }
-
-    isParallel(vec1, vec2) {
-        const crossProduct = new THREE.Vector3().crossVectors(vec1, vec2);
-        return crossProduct.length() === 0;
-    }
-
-    dotProductDirection(vec1, vec2) {
-        const dotProduct = vec1.dot(vec2);
-        return dotProduct > 0 ? 1 : -1;
-    }
-
-    roundUpDirection() {
-        this.xDirection.x = this.normalizeDirection(this.xDirection.x); // Round to two decimal places
-        this.xDirection.y = this.normalizeDirection(this.xDirection.y);
-        this.xDirection.z = this.normalizeDirection(this.xDirection.z);
-
-        this.yDirection.x = this.normalizeDirection(this.yDirection.x); // Round to two decimal places
-        this.yDirection.y = this.normalizeDirection(this.yDirection.y);
-        this.yDirection.z = this.normalizeDirection(this.yDirection.z);
-
-        this.zDirection.x = this.normalizeDirection(this.zDirection.x); // Round to two decimal places
-        this.zDirection.y = this.normalizeDirection(this.zDirection.y);
-        this.zDirection.z = this.normalizeDirection(this.zDirection.z);
+    setGroup(group) {
+        this.rotation.copy(group.rotation);
     }
 
     addToScene(scene) {
         scene.add(this.group);
-    }
-
-    removeToScene(scene) {
-        scene.remove(this.group);
-    }
-
-    setPosition(x, y, z) {
-        this.position.set(x, y, z);
         this.updateMeshes();
     }
-
-    setSize(sizeX, sizeY, sizeZ) {
-        this.sizeX = sizeX;
-        this.sizeY = sizeY;
-        this.sizeZ = sizeZ;
-
-        this.geometries = [
-            new THREE.PlaneGeometry(this.sizeZ, this.sizeY), // Right face
-            new THREE.PlaneGeometry(this.sizeZ, this.sizeY), // Left face
-            new THREE.PlaneGeometry(this.sizeX, this.sizeZ), // Top face
-            new THREE.PlaneGeometry(this.sizeX, this.sizeZ), // Bottom face
-            new THREE.PlaneGeometry(this.sizeX, this.sizeY), // Front face
-            new THREE.PlaneGeometry(this.sizeX, this.sizeY)  // Back face
-        ];
-
-        this.meshes.forEach((mesh, index) => {
-            mesh.geometry.dispose();
-            mesh.geometry = this.geometries[index];
-        });
-
-        this.updateMeshes();
-    }
-
-    rotateX(rx) {
-        this.rotation.set(this.rotation.clone().x + rx, this.rotation.clone().y, this.rotation.clone().z);
-        this.updateMeshes();
-        // this.applyEuler(new THREE.Euler(rx, 0, 0));
-        this.currentRotationProgress = 'x';
-    }
-
-    rotateY(ry) {
-        this.rotation.set(this.rotation.clone().x, this.rotation.clone().y + ry, this.rotation.clone().z);            
-        this.updateMeshes();
-        // this.applyEuler(new THREE.Euler(0, ry, 0));
-        this.currentRotationProgress = 'y';
-    }
-
-    rotateZ(rz) {
-        this.rotation.set(this.rotation.clone().x, this.rotation.clone().y, this.rotation.clone().z + rz);
-        this.updateMeshes();
-        // this.applyEuler(new THREE.Euler(0, 0, rz));
-        this.currentRotationProgress = 'z';
-    }
-
-    // This is manual method to set rotation of cube
-    // setRotation(x, y, z) {
-    //     this.rotation.set(x, y, z);
-    //     this.updateMeshes();
-    // }
 
     isInsideMesh(meshIndex) {
         return visibleFaces[this.logicX * 9 + this.logicY * 3 + this.logicZ].includes(meshIndex);
