@@ -1,20 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QuickCube</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <h1>Hello, Quick Cube!</h1>
-  <span id="timer">00:00:00</span>
-  <div id="cube-container"></div>
-  <button id="shuffle">Shuffle</button>
+  <img id="settings" src="./gear.svg" />
+  <div id="settings-panel">
+    <span>Keyboard Options</span>
+    <ul id="keyboard-options">
+      <li class="keyboard-option">Option 1: FBRLUDGIJ + space</li>
+      <li class="keyboard-option">Option 2: FBRLUDGIJ + QWEAPOMNK</li>
+      <li class="keyboard-option">Option 3: 123456789 + space</li>
+    </ul>
+  </div>
+  <div id="cube-container">
+  </div>
+  <div id="controls">
+    <span id="timer">00:00:00</span>
+    <button id="shuffle">Shuffle</button>
+  </div>
   <script src="popup.js"></script>
   <script src="viewport.js"></script>
   <script src="qcbox.js"></script>
   <script src="three.min.js"></script>
   <script src="timer.js"></script>
+  <script src="settings.js"></script>
 </body>
+
 </html>

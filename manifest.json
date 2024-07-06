@@ -1,41 +1,51 @@
 {
-    "manifest_version": 3,
-    "name": "QuickCube",
-    "version": "1.0",
-    "description": "Light and easy cubic!",
-    "permissions": [
-      "tabs", "activeTab"
-    ],
-    "background": {
-      "service_worker": "background.js"
-    },
-    "content_scripts": [
-      {
-        "matches": ["<all_urls>"],
-        "js": ["popup.js", "qcbox.js", "viewport.js", "three.min.js"],
-        "css": ["style.css"]
-      }
-    ],
-    "icons": {
+  "manifest_version": 3,
+  "name": "QuickCube",
+  "version": "1.0",
+  "description": "Light and easy cubic!",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "popup.js",
+        "qcbox.js",
+        "viewport.js",
+        "three.min.js"
+      ],
+      "css": [
+        "style.css"
+      ]
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
       "16": "icon16.png",
       "48": "icon48.png",
       "128": "icon128.png"
-    },
-    "action": {
-      "default_popup": "popup.html",
-      "default_icon": {
-        "16": "icon16.png",
-        "48": "icon48.png",
-        "128": "icon128.png"
-      }
-    },
-    "commands": {
-      "open-quickcube": {
-        "suggested_key": {
-          "default": "Ctrl+Shift+Y"
-        },
-        "description": "Open Quick Cube"
-      }
+    }
+  },
+  "commands": {
+    "open-quickcube": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y"
+      },
+      "description": "Open Quick Cube"
     }
   }
-  
+}

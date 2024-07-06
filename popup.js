@@ -116,6 +116,21 @@ function rotateCubes(clockwiseDirection, face, fromUserKeyInput = true) {
             });
             axis = new THREE.Vector3(0, 0, -1);
             break;
+        case 'g': //
+            animationCubes = cubes.filter(cube => cube.position.z === 0).sort((cube1, cube2) => {
+                // Sort by cube.position.x descending
+                if (cube1.position.x > cube2.position.x) return -1;
+                if (cube1.position.x < cube2.position.x) return 1;
+
+                // If cube.position.x are equal, sort by cube.position.z descending
+                if (cube1.position.y > cube2.position.y) return -1;
+                if (cube1.position.y < cube2.position.y) return 1;
+
+                // If both cube.position.x and cube.position.z are equal, retain order
+                return 0;
+            });
+            axis = new THREE.Vector3(0, 0, -1);
+            break;
         case 'l': //
             animationCubes = cubes.filter(cube => cube.position.x === -SPACING).sort((cube1, cube2) => {
                 // Sort by cube.position.x descending
@@ -133,6 +148,21 @@ function rotateCubes(clockwiseDirection, face, fromUserKeyInput = true) {
             break;
         case 'r':
             animationCubes = cubes.filter(cube => cube.position.x === SPACING * (SIZE - 2)).sort((cube1, cube2) => {
+                // Sort by cube.position.x descending
+                if (cube1.position.y > cube2.position.y) return -1;
+                if (cube1.position.y < cube2.position.y) return 1;
+
+                // If cube.position.x are equal, sort by cube.position.z descending
+                if (cube1.position.z > cube2.position.z) return -1;
+                if (cube1.position.z < cube2.position.z) return 1;
+
+                // If both cube.position.x and cube.position.z are equal, retain order
+                return 0;
+            });
+            axis = new THREE.Vector3(-1, 0, 0);
+            break;
+        case 'j': //
+            animationCubes = cubes.filter(cube => cube.position.x === 0).sort((cube1, cube2) => {
                 // Sort by cube.position.x descending
                 if (cube1.position.y > cube2.position.y) return -1;
                 if (cube1.position.y < cube2.position.y) return 1;
@@ -176,6 +206,21 @@ function rotateCubes(clockwiseDirection, face, fromUserKeyInput = true) {
             });
             axis = new THREE.Vector3(0, -1, 0);
             break;
+        case 'i':
+                animationCubes = cubes.filter(cube => cube.position.y === 0).sort((cube1, cube2) => {
+                    // Sort by cube.position.x descending
+                    if (cube1.position.z > cube2.position.z) return -1;
+                    if (cube1.position.z < cube2.position.z) return 1;
+    
+                    // If cube.position.x are equal, sort by cube.position.z descending
+                    if (cube1.position.x > cube2.position.x) return -1;
+                    if (cube1.position.x < cube2.position.x) return 1;
+    
+                    // If both cube.position.x and cube.position.z are equal, retain order
+                    return 0;
+                });
+                axis = new THREE.Vector3(0, -1, 0);
+                break;
         default:
             break;
     }
@@ -227,7 +272,6 @@ function rotateCubes(clockwiseDirection, face, fromUserKeyInput = true) {
             const finalQuaternion = new THREE.Quaternion();
             finalQuaternion.setFromAxisAngle(axis, angle);
 
-            console.log("here");
             faceGroup.children.forEach(cubeInternalGroup => {
                 // Apply the final rotation to each cube
                 cubeInternalGroup.applyQuaternion(finalQuaternion);
@@ -268,7 +312,6 @@ function rotateCubes(clockwiseDirection, face, fromUserKeyInput = true) {
     animateRotation();
 }
 
-
 document.addEventListener('DOMContentLoaded', init);
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -306,6 +349,14 @@ document.addEventListener('keyup', function (event) {
         case 'D':
         case 'd':
             rotateCubes(!clockWise, event.key.toLowerCase());
+            break;
+        case 'G':
+        case 'g':
+        case 'J':
+        case 'j':
+        case 'I':
+        case 'i':
+            rotateCubes(clockWise, event.key.toLowerCase());
             break;
         case ' ':
             clockWise = false;

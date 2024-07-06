@@ -11,8 +11,56 @@ body {
   min-height: 450px;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 h1 {
   color: #333;
+}
+
+ul {
+  list-style: none;
+}
+
+#settings {
+  width: 20px;
+  height: 20px;
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  cursor: pointer;
+}
+
+#settings-panel {
+  display: none;
+  height: 400px;
+  padding-top: 100px;
+}
+
+#settings-panel span {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#keyboard-options {
+  padding: 0;
+  align-items: center;
+}
+
+#keyboard-options li {
+  padding: 10px;
+  cursor: pointer;
+  border: 2px solid white;
+  box-sizing: border-box;
+}
+
+#keyboard-options li.selected {
+  text-decoration: underline;
+}
+
+#keyboard-options li:hover {
+  border: 2px solid black;
 }
 
 #shuffle {

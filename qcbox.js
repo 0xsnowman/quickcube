@@ -35,15 +35,10 @@ class QCBox {
         this.sizeY = sizeY;
         this.sizeZ = sizeZ;
         this.rotation = new THREE.Euler(0, 0, 0); // Initial rotation
-        this.xDirection = new THREE.Vector3(1, 0, 0);
-        this.yDirection = new THREE.Vector3(0, 1, 0);
-        this.zDirection = new THREE.Vector3(0, 0, 1);
 
         this.logicX = logicX;
         this.logicY = logicY;
         this.logicZ = logicZ;
-
-        this.currentRotationProgress = ''; // if it's x, cube is rotating around its own x-axis
 
         // Default colors if not provided
         this.colors = colors || [
