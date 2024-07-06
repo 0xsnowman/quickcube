@@ -77,8 +77,9 @@ const maxZoom = 20; // Maximum distance to the origin
 document.addEventListener('wheel', onDocumentMouseWheel);
 
 function onDocumentMouseWheel(event) {
-    4
+    
     if (!navigatable) return;
+    
     // Calculate zoom direction and amount
     const delta = Math.sign(event.deltaY); // Normalize scroll direction (1 for zoom in, -1 for zoom out)
 

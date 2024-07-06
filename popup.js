@@ -4,7 +4,7 @@ const SIZE = 3; // count of cubes in a row
 const BACKGROUND_COLOR = 0x000000;
 const FOREGROUND_COLOR = 0xffffff;
 
-const SHUFFLE_LENGTH = 4; // shuffle count
+const SHUFFLE_LENGTH = 10; // shuffle count
 const SHUFFLE_DEALING_TIME = 300; // face rotation dealing time
 const DURATION_FRAMES = 240; // face rotation duration frames
 const FRAME_PER_SECOND = 16; // duration frame count per second
@@ -12,6 +12,7 @@ const FRAME_PER_SECOND = 16; // duration frame count per second
 let scene, camera, renderer;
 let cubes = [];
 let randomizerString = [];
+let userKeyHistory = [];
 
 // Array to hold the cubes to be animated(rotated)
 let animationCubes = []; // array which stores the face cubes rotating
@@ -196,6 +197,7 @@ function rotateCubes(clockwiseDirection, face, fromUserKeyInput = true) {
             if (fromUserKeyInput && checkComplete()) {
                 stopTimer();
                 keyQueue = [];
+                userKeyHistory = [];
                 alert('Congratulations!');
             }
         }
@@ -336,6 +338,8 @@ function shuffle() {
     const shuffleString = 'frubld';
     for (let i = 0; i < SHUFFLE_LENGTH; ++i)
         randomizerString.push(((Number(Math.random()) * 100).toFixed() % 12));
+    copyOfRandomizerString = randomizerString;
+    console.log(randomizerString);
 
     const timerID = setInterval(() => {
         if (randomizerString.length === 0) {
@@ -343,7 +347,7 @@ function shuffle() {
             return;
         }
         const randomShuffleKey = randomizerString[0];
-        rotateCubes(randomShuffleKey % 2, shuffleString[randomShuffleKey % 6], false);
+        rotateCubes((randomShuffleKey % 6) < 3, shuffleString[randomShuffleKey % 6], false);
         randomizerString = randomizerString.slice(1, randomizerString.length);
     }, SHUFFLE_DEALING_TIME);
 }
@@ -360,6 +364,9 @@ document.addEventListener('keyup', function (event) {
             return;
 
         keyQueue.push(event.key.toLowerCase());
+
+        if (event.key.toLowerCase() !== 'enter')
+            userKeyHistory.push(event.key.toLowerCase());
     }
 });
 
