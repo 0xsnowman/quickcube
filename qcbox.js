@@ -88,7 +88,9 @@ class QCBox {
     }
 
     isInsideMesh(meshIndex) {
-        return visibleFaces[this.logicX * 9 + this.logicY * 3 + this.logicZ].includes(meshIndex);
+        const faceIndex = this.logicX * SIZE * SIZE + this.logicY * SIZE + this.logicZ;
+        // if (faceIndex > visibleFaces.length) return false;
+        return visibleFaces[faceIndex].includes(meshIndex);
     }
 
     updateMeshes() {

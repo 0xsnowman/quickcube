@@ -10,6 +10,28 @@ document.getElementById('settings').addEventListener('click', function () {
   }
 });
 
+document.getElementById('mouse-navigate-setting').addEventListener('click', function() {
+    const navigateCheck = document.getElementById('mouse-navigate-setting');
+    
+    if (navigateCheck.checked) {
+      navigatable = true;
+    } else {
+      navigatable = false;
+    }
+});
+
+document.getElementById('show-helper-text-setting').addEventListener('click', function() {
+  const helperTextShowCheck = document.getElementById('show-helper-text-setting');
+  
+  if (helperTextShowCheck.checked) {
+    showHelperText = true;
+  } else {
+    showHelperText = false;
+  }
+
+  drawTexts();
+});
+
 const keyboardOptions = document.querySelectorAll('.keyboard-option');
 
 keyboardOptions.forEach(option => {
@@ -32,11 +54,11 @@ const defaultSettings = {
   keyboardSetting: 'Option 1: FBRLUDGIJ + space'
 };
 
-loadSettings();
+// loadSettings();
 
-function loadSettings() {
-  chrome.storage.sync.get(defaultSettings, function(result) {
-    console.log('default settings', result);
-    defaultSettings.keyboardSetting = result;
-  });
-}
+// function loadSettings() {
+//   chrome.storage.sync.get(defaultSettings, function(result) {
+//     console.log('default settings', result);
+//     defaultSettings.keyboardSetting = result;
+//   });
+// }

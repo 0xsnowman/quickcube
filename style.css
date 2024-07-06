@@ -38,6 +38,10 @@ ul {
   padding-top: 100px;
 }
 
+#settings-panel .settings-panel-item {
+  padding-bottom: 20px;
+}
+
 #settings-panel span {
   font-size: 14px;
   font-weight: bold;

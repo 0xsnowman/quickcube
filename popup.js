@@ -1,19 +1,25 @@
-const WIDTH = 400, HEIGHT = 400, ASPECT_RATIO = 1.0;
+const WIDTH = 400, HEIGHT = 400, ASPECT_RATIO = 1.0; // camera settings
 const SPACING = 1.5; // spacing between cubes
-const SIZE = 3;
+const SIZE = 3; // count of cubes in a row
+const BACKGROUND_COLOR = 0x000000;
+const FOREGROUND_COLOR = 0xffffff;
 
-const SHUFFLE_LENGTH = 10;
-const SHUFFLE_DEALING_TIME = 300;
+const SHUFFLE_LENGTH = 4; // shuffle count
+const SHUFFLE_DEALING_TIME = 300; // face rotation dealing time
+const DURATION_FRAMES = 240; // face rotation duration frames
+const FRAME_PER_SECOND = 16; // duration frame count per second
 
 let scene, camera, renderer;
 let cubes = [];
 let randomizerString = [];
 
 // Array to hold the cubes to be animated(rotated)
-let animationCubes = [];
+let animationCubes = []; // array which stores the face cubes rotating
 let clockWise = true;
 
-let faceGroup;
+let faceGroup; // THREE.Group() object which stores the face cubes rotating
+
+let keyQueue = [];
 
 const colors = [
     0xff0000, // Right face
@@ -81,146 +87,155 @@ function init() {
     // Shuffler
 }
 
-// Function to rotate the cubes (9 cubes) clockwise
+// Function to rotate the cubes (one face cubes -> SIZE*SIZE) clockwise/anti-clockwise
 function rotateCubes(clockwiseDirection, face, fromUserKeyInput = true) {
+    switch (face) {
+        case 'b': // back face
+        case 'f': // front face
+        case 'g': // middle z face
+            animationCubes = cubes.filter(cube => cube.position.z === {
+                'b': -SPACING,
+                'f': SPACING * (SIZE - 2),
+                'g': 0
+            }[face]).sort((cube1, cube2) => {
+                if (cube1.position.x > cube2.position.x) return -1;
+                if (cube1.position.x < cube2.position.x) return 1;
+                if (cube1.position.y > cube2.position.y) return -1;
+                if (cube1.position.y < cube2.position.y) return 1;
+                return 0;
+            });
+            axis = new THREE.Vector3(0, 0, -1);
+            break;
+        case 'l': // left face
+        case 'r': // right face
+        case 'j': // middle x face
+            animationCubes = cubes.filter(cube => cube.position.x === {
+                'l': -SPACING,
+                'r': SPACING * (SIZE - 2),
+                'j': 0
+            }[face]).sort((cube1, cube2) => {
+                if (cube1.position.y > cube2.position.y) return -1;
+                if (cube1.position.y < cube2.position.y) return 1;
+                if (cube1.position.z > cube2.position.z) return -1;
+                if (cube1.position.z < cube2.position.z) return 1;
+                return 0;
+            });
+            axis = new THREE.Vector3(-1, 0, 0);
+            break;
+        case 'd': // down face
+        case 'u': // up face
+        case 'i': // middle y face
+            animationCubes = cubes.filter(cube => cube.position.y === {
+                'd': -SPACING,
+                'u': SPACING * (SIZE - 2),
+                'i': 0
+            }[face]).sort((cube1, cube2) => {
+                if (cube1.position.z > cube2.position.z) return -1;
+                if (cube1.position.z < cube2.position.z) return 1;
+                if (cube1.position.x > cube2.position.x) return -1;
+                if (cube1.position.x < cube2.position.x) return 1;
+                return 0;
+            });
+            axis = new THREE.Vector3(0, -1, 0);
+            break;
+        default:
+            break;
+    }
+
+    faceGroup = new THREE.Group();
+    animationCubes.forEach(cube => faceGroup.add(cube.getGroup()));
+    scene.add(faceGroup);
+    clockWise = true;
+
+    const angle = (clockwiseDirection ? 1 : -1) * Math.PI / 2;
+    const duration = DURATION_FRAMES;
+    const frameDuration = FRAME_PER_SECOND;
+    const totalFrames = duration / frameDuration;
+    let progress = 0;
+
+    const originalPositions = animationCubes.map(cube => cube.position.clone());
+    const newPositions = clockwiseDirection ? [
+        originalPositions[2], originalPositions[5], originalPositions[8],
+        originalPositions[1], originalPositions[4], originalPositions[7],
+        originalPositions[0], originalPositions[3], originalPositions[6]
+    ] : [
+        originalPositions[6], originalPositions[3], originalPositions[0],
+        originalPositions[7], originalPositions[4], originalPositions[1],
+        originalPositions[8], originalPositions[5], originalPositions[2]
+    ];
+
+    function animateRotation() {
+        if (progress < totalFrames) {
+            requestAnimationFrame(animateRotation);
+            progress++;
+            const rotationAmount = angle * frameDuration / duration;
+            const quaternion = new THREE.Quaternion().setFromAxisAngle(axis, rotationAmount);
+            faceGroup.applyQuaternion(quaternion);
+        } else {
+            const finalQuaternion = new THREE.Quaternion().setFromAxisAngle(axis, angle);
+            faceGroup.children.forEach(cubeInternalGroup => {
+                cubeInternalGroup.applyQuaternion(finalQuaternion);
+                cubeInternalGroup.updateMatrixWorld(true);
+                animationCubes.forEach((cube, i) => {
+                    if (cube.getGroup().uuid === cubeInternalGroup.uuid) {
+                        cube.setGroup(cubeInternalGroup);
+                        cube.position.copy(newPositions[i]);
+                    }
+                });
+            });
+
+            while (faceGroup.children.length > 0) {
+                faceGroup.remove(faceGroup.children[0]);
+            }
+            scene.remove(faceGroup);
+
+            animationCubes.forEach(cube => cube.addToScene(scene));
+
+            removeHandledKey();
+
+            if (fromUserKeyInput && checkComplete()) {
+                stopTimer();
+                keyQueue = [];
+                alert('Congratulations!');
+            }
+        }
+    }
+
+    animateRotation();
+}
+
+// Function to navigate the cubes (entire cubes -> SIZE*SIZE*SIZE) clockwise/anti-clockwise
+function navigateCubes(clockwiseDirection, face) {
     let axis;
 
     switch (face) {
-        case 'b': //
-            animationCubes = cubes.filter(cube => cube.position.z === -SPACING).sort((cube1, cube2) => {
-                // Sort by cube.position.x descending
-                if (cube1.position.x > cube2.position.x) return -1;
-                if (cube1.position.x < cube2.position.x) return 1;
-
-                // If cube.position.x are equal, sort by cube.position.z descending
+        case 'arrowleft':
+        case 'arrowright':
+            animationCubes = cubes.sort((cube1, cube2) => {
                 if (cube1.position.y > cube2.position.y) return -1;
                 if (cube1.position.y < cube2.position.y) return 1;
-
-                // If both cube.position.x and cube.position.z are equal, retain order
-                return 0;
-            });
-            axis = new THREE.Vector3(0, 0, -1);
-            break;
-        case 'f':
-            animationCubes = cubes.filter(cube => cube.position.z === SPACING * (SIZE - 2)).sort((cube1, cube2) => {
-                // Sort by cube.position.x descending
-                if (cube1.position.x > cube2.position.x) return -1;
-                if (cube1.position.x < cube2.position.x) return 1;
-
-                // If cube.position.x are equal, sort by cube.position.z descending
-                if (cube1.position.y > cube2.position.y) return -1;
-                if (cube1.position.y < cube2.position.y) return 1;
-
-                // If both cube.position.x and cube.position.z are equal, retain order
-                return 0;
-            });
-            axis = new THREE.Vector3(0, 0, -1);
-            break;
-        case 'g': //
-            animationCubes = cubes.filter(cube => cube.position.z === 0).sort((cube1, cube2) => {
-                // Sort by cube.position.x descending
-                if (cube1.position.x > cube2.position.x) return -1;
-                if (cube1.position.x < cube2.position.x) return 1;
-
-                // If cube.position.x are equal, sort by cube.position.z descending
-                if (cube1.position.y > cube2.position.y) return -1;
-                if (cube1.position.y < cube2.position.y) return 1;
-
-                // If both cube.position.x and cube.position.z are equal, retain order
-                return 0;
-            });
-            axis = new THREE.Vector3(0, 0, -1);
-            break;
-        case 'l': //
-            animationCubes = cubes.filter(cube => cube.position.x === -SPACING).sort((cube1, cube2) => {
-                // Sort by cube.position.x descending
-                if (cube1.position.y > cube2.position.y) return -1;
-                if (cube1.position.y < cube2.position.y) return 1;
-
-                // If cube.position.x are equal, sort by cube.position.z descending
                 if (cube1.position.z > cube2.position.z) return -1;
                 if (cube1.position.z < cube2.position.z) return 1;
-
-                // If both cube.position.x and cube.position.z are equal, retain order
-                return 0;
-            });
-            axis = new THREE.Vector3(-1, 0, 0);
-            break;
-        case 'r':
-            animationCubes = cubes.filter(cube => cube.position.x === SPACING * (SIZE - 2)).sort((cube1, cube2) => {
-                // Sort by cube.position.x descending
-                if (cube1.position.y > cube2.position.y) return -1;
-                if (cube1.position.y < cube2.position.y) return 1;
-
-                // If cube.position.x are equal, sort by cube.position.z descending
-                if (cube1.position.z > cube2.position.z) return -1;
-                if (cube1.position.z < cube2.position.z) return 1;
-
-                // If both cube.position.x and cube.position.z are equal, retain order
-                return 0;
-            });
-            axis = new THREE.Vector3(-1, 0, 0);
-            break;
-        case 'j': //
-            animationCubes = cubes.filter(cube => cube.position.x === 0).sort((cube1, cube2) => {
-                // Sort by cube.position.x descending
-                if (cube1.position.y > cube2.position.y) return -1;
-                if (cube1.position.y < cube2.position.y) return 1;
-
-                // If cube.position.x are equal, sort by cube.position.z descending
-                if (cube1.position.z > cube2.position.z) return -1;
-                if (cube1.position.z < cube2.position.z) return 1;
-
-                // If both cube.position.x and cube.position.z are equal, retain order
-                return 0;
-            });
-            axis = new THREE.Vector3(-1, 0, 0);
-            break;
-        case 'd':
-            animationCubes = cubes.filter(cube => cube.position.y === -SPACING).sort((cube1, cube2) => {
-                // Sort by cube.position.x descending
-                if (cube1.position.z > cube2.position.z) return -1;
-                if (cube1.position.z < cube2.position.z) return 1;
-
-                // If cube.position.x are equal, sort by cube.position.z descending
                 if (cube1.position.x > cube2.position.x) return -1;
                 if (cube1.position.x < cube2.position.x) return 1;
-
-                // If both cube.position.x and cube.position.z are equal, retain order
                 return 0;
             });
             axis = new THREE.Vector3(0, -1, 0);
             break;
-        case 'u': //
-            animationCubes = cubes.filter(cube => cube.position.y === SPACING * (SIZE - 2)).sort((cube1, cube2) => {
-                // Sort by cube.position.x descending
-                if (cube1.position.z > cube2.position.z) return -1;
-                if (cube1.position.z < cube2.position.z) return 1;
 
-                // If cube.position.x are equal, sort by cube.position.z descending
+        case 'arrowup':
+        case 'arrowdown':
+            animationCubes = cubes.sort((cube1, cube2) => {
                 if (cube1.position.x > cube2.position.x) return -1;
                 if (cube1.position.x < cube2.position.x) return 1;
-
-                // If both cube.position.x and cube.position.z are equal, retain order
+                if (cube1.position.y > cube2.position.y) return -1;
+                if (cube1.position.y < cube2.position.y) return 1;
+                if (cube1.position.z > cube2.position.z) return -1;
+                if (cube1.position.z < cube2.position.z) return 1;
                 return 0;
             });
-            axis = new THREE.Vector3(0, -1, 0);
+            axis = new THREE.Vector3(-1, 0, 0);
             break;
-        case 'i':
-                animationCubes = cubes.filter(cube => cube.position.y === 0).sort((cube1, cube2) => {
-                    // Sort by cube.position.x descending
-                    if (cube1.position.z > cube2.position.z) return -1;
-                    if (cube1.position.z < cube2.position.z) return 1;
-    
-                    // If cube.position.x are equal, sort by cube.position.z descending
-                    if (cube1.position.x > cube2.position.x) return -1;
-                    if (cube1.position.x < cube2.position.x) return 1;
-    
-                    // If both cube.position.x and cube.position.z are equal, retain order
-                    return 0;
-                });
-                axis = new THREE.Vector3(0, -1, 0);
-                break;
         default:
             break;
     }
@@ -236,23 +251,27 @@ function rotateCubes(clockwiseDirection, face, fromUserKeyInput = true) {
     const angle = (clockwiseDirection ? 1 : -1) * Math.PI / 2; // 90 degrees
 
     let progress = 0;
-    const duration = 240; // Duration of animation in milliseconds
-    const frameDuration = 16; // Assuming 60fps, ~16ms per frame
+    const duration = DURATION_FRAMES; // Duration of animation in milliseconds
+    const frameDuration = FRAME_PER_SECOND; // Assuming 60fps, ~16ms per frame
     const totalFrames = duration / frameDuration;
 
     // Store original positions for animation
     const originalPositions = animationCubes.map(cube => cube.position.clone());
 
-    // Calculate new positions
-    const newPositions = clockwiseDirection ? [
-        originalPositions[2], originalPositions[5], originalPositions[8],
-        originalPositions[1], originalPositions[4], originalPositions[7],
-        originalPositions[0], originalPositions[3], originalPositions[6]
-    ] : [
-        originalPositions[6], originalPositions[3], originalPositions[0],
-        originalPositions[7], originalPositions[4], originalPositions[1],
-        originalPositions[8], originalPositions[5], originalPositions[2]
-    ];
+    let newPositions = [];
+
+    for (let i = 0; i < SIZE; ++i) {
+        // Calculate new positions
+        newPositions.push(...(clockwiseDirection ? [
+            originalPositions[i * 9 + 2], originalPositions[i * 9 + 5], originalPositions[i * 9 + 8],
+            originalPositions[i * 9 + 1], originalPositions[i * 9 + 4], originalPositions[i * 9 + 7],
+            originalPositions[i * 9 + 0], originalPositions[i * 9 + 3], originalPositions[i * 9 + 6]
+        ] : [
+            originalPositions[i * 9 + 6], originalPositions[i * 9 + 3], originalPositions[i * 9 + 0],
+            originalPositions[i * 9 + 7], originalPositions[i * 9 + 4], originalPositions[i * 9 + 1],
+            originalPositions[i * 9 + 8], originalPositions[i * 9 + 5], originalPositions[i * 9 + 2]
+        ]));
+    }
 
     clockWise = true;
 
@@ -298,14 +317,7 @@ function rotateCubes(clockwiseDirection, face, fromUserKeyInput = true) {
                 cube.addToScene(scene);
             });
 
-            // if it's not from auto shuffler
-            if (fromUserKeyInput) { 
-                // check complete
-                if (checkComplete()) {
-                    stopTimer();
-                    alert('Congratulations!');
-                }
-            }
+            removeHandledKey();
         }
     }
 
@@ -316,53 +328,96 @@ document.addEventListener('DOMContentLoaded', init);
 
 document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('shuffle').addEventListener('click', function () {
-        const shuffleString = 'frubld';
-        for (let i = 0; i < SHUFFLE_LENGTH; ++i)
-            randomizerString.push(((Number(Math.random()) * 100).toFixed() % 12));
-
-        const timerID = setInterval(() => {
-            if (randomizerString.length === 0) {
-                clearInterval(timerID);
-                return;
-            }
-            const randomShuffleKey = randomizerString[0];
-            rotateCubes(randomShuffleKey % 2, shuffleString[randomShuffleKey % 6], false);
-            randomizerString = randomizerString.slice(1, randomizerString.length);
-        }, SHUFFLE_DEALING_TIME);
+        shuffle();
     });
 });
 
+function shuffle() {
+    const shuffleString = 'frubld';
+    for (let i = 0; i < SHUFFLE_LENGTH; ++i)
+        randomizerString.push(((Number(Math.random()) * 100).toFixed() % 12));
+
+    const timerID = setInterval(() => {
+        if (randomizerString.length === 0) {
+            clearInterval(timerID);
+            return;
+        }
+        const randomShuffleKey = randomizerString[0];
+        rotateCubes(randomShuffleKey % 2, shuffleString[randomShuffleKey % 6], false);
+        randomizerString = randomizerString.slice(1, randomizerString.length);
+    }, SHUFFLE_DEALING_TIME);
+}
+
 document.addEventListener('keyup', function (event) {
-    switch (event.key) {
-        case 'F':
+    const validKeys = ['f', 'b', 'r', 'l', 'u', 'd', 'g', 'i', 'j', ' ', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'enter'];
+
+    if (validKeys.includes(event.key.toLowerCase())) {
+        if (keyQueue.length === 0) {
+            handleKey(event.key.toLocaleLowerCase());
+        }
+        
+        if (keyQueue.length === 0 && event.key.toLowerCase() === ' ')
+            return;
+
+        keyQueue.push(event.key.toLowerCase());
+    }
+});
+
+function removeHandledKey() {
+    if (keyQueue.length === 0) return;
+    keyQueue = keyQueue.slice(1, keyQueue.length);
+
+    console.log(keyQueue);
+    if (keyQueue.length > 0) {
+        handleKey(keyQueue[0]);
+    }
+}
+
+function handleKey(key) {
+    switch (key.toLowerCase()) {
+        // control
         case 'f':
-        case 'R':
         case 'r':
-        case 'U':
         case 'u':
-            rotateCubes(clockWise, event.key.toLowerCase());
+            rotateCubes(clockWise, key.toLowerCase());
             break;
-        case 'B':
         case 'b':
-        case 'L':
         case 'l':
-        case 'D':
         case 'd':
-            rotateCubes(!clockWise, event.key.toLowerCase());
+            rotateCubes(!clockWise, key.toLowerCase());
             break;
-        case 'G':
         case 'g':
-        case 'J':
         case 'j':
-        case 'I':
         case 'i':
-            rotateCubes(clockWise, event.key.toLowerCase());
+            rotateCubes(clockWise, key.toLowerCase());
             break;
         case ' ':
             clockWise = false;
+            removeHandledKey();
+            break;
+
+        // navigation
+        case 'arrowleft':
+            navigateCubes(clockWise, key.toLowerCase());
+            break;
+        case 'arrowright':
+            navigateCubes(!clockWise, key.toLowerCase());
+            break;
+        case 'arrowup':
+            navigateCubes(clockWise, key.toLowerCase());
+            break;
+        case 'arrowdown':
+            navigateCubes(!clockWise, key.toLowerCase());
+            break;
+
+        // setting
+        case 'enter':
+            shuffle();
+            break;
+        default:
             break;
     };
-});
+};
 
 function checkComplete() {
     let completed = true;
