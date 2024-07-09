@@ -1,8 +1,8 @@
 const WIDTH = 400, HEIGHT = 400, ASPECT_RATIO = 1.0; // camera settings
 const SPACING = 1.5; // spacing between cubes
 const SIZE = 3; // count of cubes in a row
-const BACKGROUND_COLOR = 0x000000;
-const FOREGROUND_COLOR = 0xffffff;
+const BACKGROUND_COLOR = 0xffffff;
+const FOREGROUND_COLOR = 0x000000;
 
 const SHUFFLE_LENGTH = 10; // shuffle count
 const SHUFFLE_DEALING_TIME = 300; // face rotation dealing time
@@ -22,15 +22,6 @@ let faceGroup; // THREE.Group() object which stores the face cubes rotating
 
 let keyQueue = [];
 
-const colors = [
-    0xff0000, // Right face
-    0x00ff00, // Left face
-    0x0000ff, // Top face
-    0xffff00, // Bottom face
-    0x00ffff, // Front face
-    0xff00ff  // Back face
-];
-
 function init() {
 
     // Scene, Camera, Renderer setup
@@ -42,13 +33,17 @@ function init() {
 
     faceGroup = new THREE.Group();
 
+    /* -- experiment -- */
+    /* -- experiment -- */
+
     // Ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Soft white light
     scene.add(ambientLight);
+    scene.background = new THREE.Color(BACKGROUND_COLOR);
 
     // Function to create a cube
     function createCube(x, y, z, logicX, logicY, logicZ) {
-        const qcBox = new QCBox(x, y, z, 1, 1, 1, colors, logicX, logicY, logicZ);
+        const qcBox = new QCBox(x, y, z, 1.5, 1.5, 1.5, logicX, logicY, logicZ);
         qcBox.addToScene(scene);
         cubes.push(qcBox);
     }
@@ -198,7 +193,7 @@ function rotateCubes(clockwiseDirection, face, fromUserKeyInput = true) {
                 stopTimer();
                 keyQueue = [];
                 userKeyHistory = [];
-                alert('Congratulations!');
+                congrats();
             }
         }
     }
@@ -359,7 +354,7 @@ document.addEventListener('keyup', function (event) {
         if (keyQueue.length === 0) {
             handleKey(event.key.toLocaleLowerCase());
         }
-        
+
         if (keyQueue.length === 0 && event.key.toLowerCase() === ' ')
             return;
 

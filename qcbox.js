@@ -29,7 +29,7 @@ const visibleFaces = [
 ];
 
 class QCBox {
-    constructor(x, y, z, sizeX, sizeY, sizeZ, colors, logicX, logicY, logicZ) {
+    constructor(x, y, z, sizeX, sizeY, sizeZ, logicX, logicY, logicZ) {
         this.position = new THREE.Vector3(x, y, z);
         this.sizeX = sizeX;
         this.sizeY = sizeY;
@@ -40,26 +40,25 @@ class QCBox {
         this.logicY = logicY;
         this.logicZ = logicZ;
 
-        // Default colors if not provided
-        this.colors = colors || [
-            0xff0000, // Right face
-            0x00ff00, // Left face
-            0x0000ff, // Top face
-            0xffff00, // Bottom face
-            0x00ffff, // Front face
-            0xff00ff  // Back face
+        this.colorUrls = [
+            'assets/boxcolors/red.jpg',
+            'assets/boxcolors/green.jpg',
+            'assets/boxcolors/blue.jpg',
+            'assets/boxcolors/yellow.jpg',
+            'assets/boxcolors/orange.jpg',
+            'assets/boxcolors/white.jpg',
         ];
 
-        this.materials = this.colors.map(color => new THREE.MeshBasicMaterial({ color }));
-        this.darkMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        this.materials = this.colorUrls.map((colorUrl) => this.loadTexture(colorUrl));
+        this.darkMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
         this.geometries = [
-            new THREE.PlaneGeometry(this.sizeZ, this.sizeY), // Right face
-            new THREE.PlaneGeometry(this.sizeZ, this.sizeY), // Left face
-            new THREE.PlaneGeometry(this.sizeX, this.sizeZ), // Top face
-            new THREE.PlaneGeometry(this.sizeX, this.sizeZ), // Bottom face
-            new THREE.PlaneGeometry(this.sizeX, this.sizeY), // Front face
-            new THREE.PlaneGeometry(this.sizeX, this.sizeY)  // Back face
+            this.createGeometry(this.sizeZ, this.sizeY), // Right face
+            this.createGeometry(this.sizeZ, this.sizeY), // Left face
+            this.createGeometry(this.sizeX, this.sizeZ), // Top face
+            this.createGeometry(this.sizeX, this.sizeZ), // Bottom face
+            this.createGeometry(this.sizeX, this.sizeY), // Front face
+            this.createGeometry(this.sizeX, this.sizeY)  // Back face
         ];
 
         this.meshes = this.geometries.map((geometry, index) => {
@@ -72,6 +71,37 @@ class QCBox {
         this.meshes.forEach(mesh => this.group.add(mesh));
 
         this.updateMeshes();
+    }
+
+    createGeometry(width, height) {
+        const radius = 0.15;
+
+        // Create a shape for the rounded rectangle
+        const shape = new THREE.Shape();
+        shape.moveTo(-width / 2 + radius, -height / 2);
+        shape.lineTo(width / 2 - radius, -height / 2);
+        shape.quadraticCurveTo(width / 2, -height / 2, width / 2, -height / 2 + radius);
+        shape.lineTo(width / 2, height / 2 - radius);
+        shape.quadraticCurveTo(width / 2, height / 2, width / 2 - radius, height / 2);
+        shape.lineTo(-width / 2 + radius, height / 2);
+        shape.quadraticCurveTo(-width / 2, height / 2, -width / 2, height / 2 - radius);
+        shape.lineTo(-width / 2, -height / 2 + radius);
+        shape.quadraticCurveTo(-width / 2, -height / 2, -width / 2 + radius, -height / 2);
+
+        // Extrude the shape into a geometry
+        const extrudeSettings = { depth: 0.1, bevelEnabled: false };
+        return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    }
+
+    loadTexture(colorUrl) {
+        const texture = new THREE.TextureLoader().load(colorUrl);
+
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(0.55, 0.55);
+        texture.offset.set(-SIZE / 2, -SIZE / 2); // Ensure no offset
+
+        return new THREE.MeshBasicMaterial({ map: texture });
     }
 
     getGroup() {

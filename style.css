@@ -91,3 +91,22 @@ ul {
   bottom: 5px;
   font-size: 12px;
 }
+
+#congrats {
+  position: absolute;
+  top: 10%;
+  left: 0;
+  width: 100%;
+  height: 80%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  opacity: 0;
+  cursor: auto;
+  user-select: none;
+}
+
+#congrats h1 {
+  font-size: 28px;
+}
