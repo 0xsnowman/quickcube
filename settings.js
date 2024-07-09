@@ -54,11 +54,10 @@ const defaultSettings = {
   keyboardSetting: 'Option 1: FBRLUDGIJ + space'
 };
 
-// loadSettings();
+loadSettings();
 
-// function loadSettings() {
-//   chrome.storage.sync.get(defaultSettings, function(result) {
-//     console.log('default settings', result);
-//     defaultSettings.keyboardSetting = result;
-//   });
-// }
+function loadSettings() {
+  chrome.storage.sync.get(defaultSettings, function(result) {
+    defaultSettings.keyboardSetting = result;
+  });
+}

@@ -22,6 +22,9 @@ let faceGroup; // THREE.Group() object which stores the face cubes rotating
 
 let keyQueue = [];
 
+// Store color data
+const colorGrid = [];
+
 function init() {
 
     // Scene, Camera, Renderer setup
@@ -72,6 +75,10 @@ function init() {
     }
 
     window.addEventListener('resize', onWindowResize, false);
+
+    document.getElementById('shuffle').addEventListener('click', function () {
+        shuffle();
+    });
 
     // Animation loop
     function animate() {
@@ -323,12 +330,6 @@ function navigateCubes(clockwiseDirection, face) {
 
 document.addEventListener('DOMContentLoaded', init);
 
-document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('shuffle').addEventListener('click', function () {
-        shuffle();
-    });
-});
-
 function shuffle() {
     const shuffleString = 'frubld';
     for (let i = 0; i < SHUFFLE_LENGTH; ++i)
@@ -349,8 +350,12 @@ function shuffle() {
 
 document.addEventListener('keyup', function (event) {
     const validKeys = ['f', 'b', 'r', 'l', 'u', 'd', 'g', 'i', 'j', ' ', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'enter'];
+    const timerValidKeys = ['f', 'b', 'r', 'l', 'u', 'd'];
 
     if (validKeys.includes(event.key.toLowerCase())) {
+        if (timerValidKeys.includes(event.key.toLowerCase())) {
+            startTimer();
+        }
         if (keyQueue.length === 0) {
             handleKey(event.key.toLocaleLowerCase());
         }
@@ -362,6 +367,61 @@ document.addEventListener('keyup', function (event) {
 
         if (event.key.toLowerCase() !== 'enter')
             userKeyHistory.push(event.key.toLowerCase());
+    } else if (event.key.toLowerCase() === '`' || event.key.toLowerCase() === '~') {
+        const shuffleString = 'frubld';
+        const reversedArray = userKeyHistory.reverse();
+        reversedArray.forEach((key) => {
+            keyQueue.push(' ');
+            keyQueue.push(key);
+        })
+        while (copyOfRandomizerString.length > 0) {
+            const randomShuffleKey = copyOfRandomizerString[copyOfRandomizerString.length - 1];
+            keyQueue.push(' ');
+            keyQueue.push(shuffleString[randomShuffleKey % 6]);
+            copyOfRandomizerString = copyOfRandomizerString.slice(0, copyOfRandomizerString.length - 1);
+        }
+        handleAI();
+    } else if (event.key.toLowerCase() >= '0' && event.key.toLowerCase() <= '9') {
+        const text = document.getElementById('zoom-indicator').innerHTML + event.key.toLowerCase();
+        if (Number(text) > 25) return;
+        
+        document.getElementById('zoom-indicator').innerHTML += event.key.toLowerCase();
+        const zoomCanvasIndex = Number(document.getElementById('zoom-indicator').innerText) - 1;
+
+        const rowIndex = Math.floor(zoomCanvasIndex / 5);
+        const colIndex = zoomCanvasIndex % 5;
+
+        const colors = colorGrid[rowIndex][colIndex];
+
+        // Draw the grid with colored rectangles
+        for (let row = 0; row < SIZE; row++) {
+            for (let col = 0; col < SIZE; col++) {
+                const color = colors[row * SIZE + col];
+                zoomCtx.fillStyle = color;
+                zoomCtx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+            }
+        }
+
+        zoomCtx.strokeStyle = '#000000';
+        zoomCtx.lineWidth = 1;
+        for (let i = 0; i < SIZE; ++i) {
+            // Vertical lines
+            zoomCtx.beginPath();
+            zoomCtx.moveTo(i * cellSize, 0);
+            zoomCtx.lineTo(i * cellSize, zoomCanvas.height);
+            zoomCtx.stroke();
+
+            // Horizontal lines
+            zoomCtx.beginPath();
+            zoomCtx.moveTo(0, i * cellSize);
+            zoomCtx.lineTo(zoomCanvas.width, i * cellSize);
+            zoomCtx.stroke();
+        }
+    } else if (event.key.toLowerCase() == 'backspace') {
+        let text = document.getElementById('zoom-indicator').innerText;
+        if (text.length === 0) return;
+        text = text.slice(0, text.length - 1);
+        document.getElementById('zoom-indicator').innerHTML = text;
     }
 });
 

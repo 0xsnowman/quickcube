@@ -1,16 +1,6 @@
 let startTime;
 let timerInterval;
 
-document.addEventListener('keyup', handleKeyInput);
-
-function handleKeyInput(event) {
-    const validKeys = ['f', 'b', 'r', 'l', 'u', 'd'];
-
-    if (validKeys.includes(event.key.toLowerCase())) {
-        startTimer();
-    }
-}
-
 function startTimer() {
     if (timerInterval) return; // Prevent starting the timer multiple times
 

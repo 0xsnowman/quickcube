@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body id="quick-cube-body">
   <h1>Hello, Quick Cube!</h1>
   <img id="settings" src="./gear.svg" />
   <div id="settings-panel">
@@ -30,6 +30,13 @@
     </div>
   </div>
   <div id="cube-container">
+    <div id="pixel-art-container">
+      <canvas id="pixelArtCanvas" width="240" height="240"></canvas>
+      <div id="zoom-canvas-container">
+        <span id="zoom-indicator"></span>
+        <canvas id="zoomCanvas" width="48" height="48"></canvas>
+      </div>
+    </div>
   </div>
   <div id="controls">
     <span id="timer">00:00:00</span>
@@ -46,6 +53,7 @@
   <script src="settings.js"></script>
   <script src="ai.js"></script>
   <script src="ui.js"></script>
+  <script src="pixelate.js"></script>
 </body>
 
 </html>
