@@ -13,6 +13,7 @@
 
 #quick-cube-body * {
   box-sizing: border-box;
+  user-select: none;
 }
 
 #quick-cube-body canvas {
@@ -33,7 +34,7 @@ ul {
   width: 20px;
   height: 20px;
   position: absolute;
-  right: 15px;
+  left: 15px;
   top: 15px;
   cursor: pointer;
 }
@@ -126,11 +127,24 @@ ul {
   transition: transform 0.3s ease;
 }
 
+#rating {
+  position: absolute;
+  right: 15px;
+  top: 20px;
+  font-size: 25px;
+  color: darkorange;
+}
+
+#rating #user-name {
+  font-size: 16px;
+  text-align: right;
+}
+
 #timer {
   position: absolute;
   right: 5px;
   bottom: 5px;
-  font-size: 12px;
+  font-size: 18px;
 }
 
 #congrats {

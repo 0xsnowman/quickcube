@@ -25,6 +25,8 @@ let keyQueue = [];
 // Store color data
 const colorGrid = [];
 
+const gameType = 'board'; // or 'cubic'
+
 function init() {
 
     // Scene, Camera, Renderer setup
@@ -37,6 +39,10 @@ function init() {
     faceGroup = new THREE.Group();
 
     /* -- experiment -- */
+    const geo = new THREE.PlaneGeometry(8, 8);
+    const expMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x000000 }));
+    expMesh.rotation.copy(new THREE.Euler(0, 0, 0));
+    // scene.add(expMesh);
     /* -- experiment -- */
 
     // Ambient light
@@ -383,13 +389,13 @@ document.addEventListener('keyup', function (event) {
         handleAI();
     } else if (event.key.toLowerCase() >= '0' && event.key.toLowerCase() <= '9') {
         const text = document.getElementById('zoom-indicator').innerHTML + event.key.toLowerCase();
-        if (Number(text) > 25) return;
-        
+        if (Number(text) > GRID_SIZE * GRID_SIZE) return;
+
         document.getElementById('zoom-indicator').innerHTML += event.key.toLowerCase();
         const zoomCanvasIndex = Number(document.getElementById('zoom-indicator').innerText) - 1;
 
-        const rowIndex = Math.floor(zoomCanvasIndex / 5);
-        const colIndex = zoomCanvasIndex % 5;
+        const rowIndex = Math.floor(zoomCanvasIndex / GRID_SIZE);
+        const colIndex = zoomCanvasIndex % GRID_SIZE;
 
         const colors = colorGrid[rowIndex][colIndex];
 
@@ -429,7 +435,6 @@ function removeHandledKey() {
     if (keyQueue.length === 0) return;
     keyQueue = keyQueue.slice(1, keyQueue.length);
 
-    console.log(keyQueue);
     if (keyQueue.length > 0) {
         handleKey(keyQueue[0]);
     }
@@ -482,13 +487,53 @@ function handleKey(key) {
 };
 
 function checkComplete() {
-    let completed = true;
+    if (gameType === 'board') {
+        const zoomCanvasIndex = Number(document.getElementById('zoom-indicator').innerText) - 1;
 
-    cubes.forEach((cube) => {
-        if ((cube.logicX - 1) * SPACING !== cube.position.x || (cube.logicY - 1) * SPACING !== cube.position.y || (cube.logicZ - 1) * SPACING !== cube.position.z) {
-            completed = false;
+        if (zoomCanvasIndex === -1) return;
+
+        const rowIndex = Math.floor(zoomCanvasIndex / GRID_SIZE);
+        const colIndex = zoomCanvasIndex % GRID_SIZE;
+        const colors = colorGrid[rowIndex][colIndex];
+
+        animationCubes = cubes.filter(cube => cube.position.z === SPACING * (SIZE - 2)).sort((cube1, cube2) => {
+            if (cube1.position.y > cube2.position.y) return -1;
+            if (cube1.position.y < cube2.position.y) return 1;
+            if (cube1.position.x > cube2.position.x) return 1;
+            if (cube1.position.x < cube2.position.x) return -1;
+            return 0;
+        });
+
+        console.log(animationCubes.length);
+        if (animationCubes.length !== 9) return;
+
+        let sameColorCount = 0;
+        for (let i = 0; i < SIZE * SIZE; ++i) {
+            const colorIndex = planeColors.findIndex(item => item === colors[i]);
+            const textureUrl = animationCubes[i].colorUrls[colorIndex];
+            if (animationCubes[i].findFaceWithTexture(textureUrl)) {
+                ++ sameColorCount;
+            }
         }
-    });
 
-    return completed;
+        if (sameColorCount === 9) {
+            targetBlocks.push({
+                x: colIndex,
+                y: rowIndex
+            });
+            redrawTargetBlocks();
+        }
+
+        return false; // Need to fix
+    } else if (gameType === 'cubic') {
+        let completed = true;
+
+        cubes.forEach((cube) => {
+            if ((cube.logicX - 1) * SPACING !== cube.position.x || (cube.logicY - 1) * SPACING !== cube.position.y || (cube.logicZ - 1) * SPACING !== cube.position.z) {
+                completed = false;
+            }
+        });
+
+        return completed;
+    } else { }
 }

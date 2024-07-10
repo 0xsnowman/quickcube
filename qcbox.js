@@ -42,11 +42,11 @@ class QCBox {
 
         this.colorUrls = [
             'assets/boxcolors/red.jpg',
+            'assets/boxcolors/orange.jpg',
             'assets/boxcolors/green.jpg',
             'assets/boxcolors/blue.jpg',
-            'assets/boxcolors/yellow.jpg',
-            'assets/boxcolors/orange.jpg',
             'assets/boxcolors/white.jpg',
+            'assets/boxcolors/yellow.jpg',
         ];
 
         this.materials = this.colorUrls.map((colorUrl) => this.loadTexture(colorUrl));
@@ -62,9 +62,8 @@ class QCBox {
         ];
 
         this.meshes = this.geometries.map((geometry, index) => {
-            if (this.isInsideMesh(index))
-                return new THREE.Mesh(geometry, this.materials[index]);
-            else return new THREE.Mesh(geometry);
+            const material = this.isInsideMesh(index) ? this.materials[index] : this.darkMaterial;
+            return new THREE.Mesh(geometry, material);
         });
 
         this.group = new THREE.Group();
@@ -101,7 +100,9 @@ class QCBox {
         texture.repeat.set(0.55, 0.55);
         texture.offset.set(-SIZE / 2, -SIZE / 2); // Ensure no offset
 
-        return new THREE.MeshBasicMaterial({ map: texture });
+        const material = new THREE.MeshBasicMaterial({ map: texture });
+        material.userData = { colorUrl }; // Store the colorUrl in userData
+        return material;
     }
 
     getGroup() {
@@ -119,7 +120,6 @@ class QCBox {
 
     isInsideMesh(meshIndex) {
         const faceIndex = this.logicX * SIZE * SIZE + this.logicY * SIZE + this.logicZ;
-        // if (faceIndex > visibleFaces.length) return false;
         return visibleFaces[faceIndex].includes(meshIndex);
     }
 
@@ -157,5 +157,63 @@ class QCBox {
                     break;
             }
         });
+    }
+
+    isEssentiallySame(value, targetValue, epsilon = 1e-3) {
+        return Math.abs(targetValue - value) < epsilon ? true : false;
+    }
+
+    checkFace(face, compareFace) {
+        let directionVector = new THREE.Vector3(0, 0, 0);
+        switch (face) {
+            case 0:
+                directionVector = new THREE.Vector3(1, 0, 0);
+                break;
+            case 1:
+                directionVector = new THREE.Vector3(-1, 0, 0);
+                break;
+            case 2:
+                directionVector = new THREE.Vector3(0, 1, 0);
+                break;
+            case 3:
+                directionVector = new THREE.Vector3(0, -1, 0);
+                break;
+            case 4:
+                directionVector = new THREE.Vector3(0, 0, 1);
+                break;
+            case 5:
+                directionVector = new THREE.Vector3(0, 0, -1);
+                break;
+        
+            default:
+                break;
+        }
+
+        const euler = new THREE.Euler(this.rotation.x, this.rotation.y, this.rotation.z, 'XYZ');
+        directionVector.applyEuler(euler);
+
+        if (compareFace === 'front') {
+            if (this.isEssentiallySame(directionVector.x, 0) && this.isEssentiallySame(directionVector.y, 0) && this.isEssentiallySame(directionVector.z, 1)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    findFaceWithTexture(url) {
+        const faceIndex = this.logicX * SIZE * SIZE + this.logicY * SIZE + this.logicZ;
+        const faces = visibleFaces[faceIndex];
+
+        let isSame = false;
+        faces.forEach((face) => {
+            if (this.checkFace(face, 'front')) {
+                if (this.meshes[face].material.userData.colorUrl === url) {
+                    isSame = true;
+                }
+            }
+        });
+
+        return isSame;
     }
 }
